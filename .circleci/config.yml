@@ -12,27 +12,76 @@ version: 2.1
 #     ...
 
 jobs:
-  hello-world: # Delete this job when you get started
+  build-frontend:
     docker:
-      - image: amazon/aws-cli
+      - image: circleci/node:13.8.0
     steps:
       - checkout
       - run:
-          name: Say Hello
+          name: Build the frontend
           command: |
-            echo "Hello World"
+            cd frontend
+            npm i
+            npm run build
 
-#  build-frontend:
+  build-frontend:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - run:
+          name: Build the backend
+          command: |
+            cd backend
+            npm i
+            npm run build
 
-#  build-frontend:
+  test-frontend:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - run:
+          name: Test frontend
+          command: |
+            cd frontend
+            npm i
+            npm run test
 
-#  test-frontend:
+  test-backend:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - run:
+          name: Test backend
+          command: |
+            cd backend
+            npm i
+            npm run test
 
-#  est-backend:
-
-#  can-frontend:
-
-#  scan-backend:
+  scan-frontend:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - run:
+          name: Scan the frontend
+          command: |
+            cd frontend
+            npm i
+            npm audit fix --audit-level=critical
+  scan-backend:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - run:
+          name: Scan the backend
+          command: |
+            cd backend
+            npm i
+            npm audit fix --audit-level=critical
 
 #  deploy-infrastructure:
 
@@ -50,5 +99,19 @@ jobs:
 
 workflows:
   default:
+    default:
     jobs:
-      - hello-world
+      - build-frontend
+      - build-backend
+      - test-frontend:
+          requires: 
+            - build-frontend
+      - test-backend:
+          requires: 
+            - build-backend
+      - scan-frontend:
+          requires: 
+            - build-frontend
+      - scan-backend:
+          requires: 
+            - build-backend
