@@ -58,6 +58,7 @@ jobs:
           command: |
             cd frontend
             npm i
+            npm run build
       - run:
           name: Test the Frontend
           command: |
@@ -81,6 +82,7 @@ jobs:
           command: |
             cd backend
             npm i
+            npm run build
       - run:
           name: Test the backend
           command: | 
@@ -94,23 +96,39 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - restore_cache:
+          keys: 
+            - frontend-{{ checksum "package-lock.json" }}
+            - frontend-
       - run:
           name: Scan the frontend
           command: |
             cd frontend
             npm i
             npm audit fix --audit-level=critical
+      - save_cache:
+          key: frontend-{{ checksum "package-lock.json" }}
+          paths:
+            - node_modules
   scan-backend:
     docker:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - restore_cache:
+          keys: 
+            - backend-{{ checksum "package-lock.json" }}
+            - backend-
       - run:
           name: Scan the backend
           command: |
             cd backend
             npm i
             npm audit fix --audit-level=critical
+      - save_cache:
+          key: backend-{{ checksum "package-lock.json" }}
+          paths:
+            - node_modules
 
 #  deploy-infrastructure:
 
