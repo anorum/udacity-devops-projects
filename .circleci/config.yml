@@ -226,7 +226,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install AWS for rollback
+          name: Install Dependencies
           command: |
             pip install awscli
             apk add --update nodejs npm curl
