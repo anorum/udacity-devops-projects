@@ -238,7 +238,7 @@ jobs:
             npm i 
             npm run build
             npm run migrations > migrated.txt
-            
+            cat migrated.txt
       - run:
           name: Persist migrations status
           command: |
@@ -404,6 +404,10 @@ workflows:
           requires:
             - scan-backend
             - scan-frontend
+            filters:
+              branches:
+                only:
+                  - master
       - configure-infrastructure:
           requires:
             - deploy-infrastructure
