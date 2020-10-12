@@ -1,5 +1,6 @@
 ---
     - name: Copy over app,
+      become: true
       copy:
         # Uncomment to run remotely on circleci src: /home/circleci/project/backend/.dist
         src: /root/project/backend/dist
