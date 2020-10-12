@@ -71,9 +71,9 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-        keys: 
-          - backend-{{ checksum "package-lock.json" }}
-          - backend-
+          keys: 
+            - backend-{{ checksum "package-lock.json" }}
+            - backend-
       - run:
           name: Install dependencies for backend
           command: |
