@@ -54,15 +54,11 @@ jobs:
             - frontend-{{ checksum "package-lock.json" }}
             - frontend-
       - run:
-          name: Install dependencies for test
+          name: Test the Frontend
           command: |
             cd frontend
             npm i
             npm run build
-      - run:
-          name: Test the Frontend
-          command: |
-            cd frontend
             npm run test
       - store_test_results:
           path: ./frontend/coverage/
@@ -78,15 +74,11 @@ jobs:
             - backend-{{ checksum "package-lock.json" }}
             - backend-
       - run:
-          name: Install dependencies for backend
+          name: Test the backend
           command: |
             cd backend
             npm i
             npm run build
-      - run:
-          name: Test the backend
-          command: | 
-            cd backend
             npm run test
       - store_test_results:
           path: ./backend/coverage/
@@ -105,7 +97,7 @@ jobs:
           command: |
             cd frontend
             npm i
-            npm audit fix --audit-level=critical
+            npm audit fix --audit-level=critical --force
       - save_cache:
           key: frontend-{{ checksum "package-lock.json" }}
           paths:
@@ -124,15 +116,78 @@ jobs:
           command: |
             cd backend
             npm i
-            npm audit fix --audit-level=critical
+            npm audit fix --audit-level=critical --force
       - save_cache:
           key: backend-{{ checksum "package-lock.json" }}
           paths:
             - node_modules
 
-#  deploy-infrastructure:
+  deploy-infrastructure:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      #Required to persist
+      - run: yum -y install tar gzip
+      - run:
+          name: Create backend with Cloudformation
+          command: |
+            aws cloudformation deploy \
+            --template-file .circleci/files/backend.yml \
+            --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" \
+            --tags project=udapeople
+      - run:
+          name: Create frontend with Cloudformation
+          command: |
+            aws cloudformation deploy \
+            --template-file .circleci/files/frontend.yml \
+            --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" \
+            --tags project=udapeople
+      - run:
+          # Decided to just put it straight in the inventory file so I can use it later for configuration
+          name: Save new backend url to inventory file
+          command: |
+            echo [server] > .circleci/ansible/inventory
+            aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text >> .circleci/ansible/inventory
+            cat .circleci/ansible/inventory
+      - run:
+          name: Write S3 buckets name to memstash
+          command: |
+            frontend_bucket_name=$(echo "udapeople-${CIRCLE_WORKFLOW_ID:0:7}")
+            curl -H "Content-Type: text/plain" -H "token: c1106d5f-65cc-4d53-9393-71ec763e84df" \
+            --request PUT --data "${frontend_bucket_name}" \
+            https://api.memstash.io/values/bucket_name
+      
+      - persist_to_workspace:
+          root: .circleci/ansible/
+          paths:
+            - inventory
 
-#  configure-infrastructure:
+  configure-infrastructure:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["77:5c:ed:6f:a1:a8:ef:b5:b6:ba:98:31:8f:4a:9d:12"]
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install Dependencies
+          command: |
+            apk add --update ansible
+            pip install awscli
+      - run:
+          name: Configure server
+          command: |
+            ansible-playbook -i inventory .circleci/ansible/main.yml
+    
+    
 
 #  run-migrations:
 
