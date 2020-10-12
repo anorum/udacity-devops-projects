@@ -164,9 +164,9 @@ jobs:
             https://api.memstash.io/values/bucket_name
       
       - persist_to_workspace:
-          root: .circleci/ansible/
+          root: ~/
           paths:
-            - inventory
+            - ./.circleci/ansible/inventory
 
   configure-infrastructure:
     docker:
