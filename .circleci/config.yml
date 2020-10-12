@@ -189,11 +189,93 @@ jobs:
     
     
 
-#  run-migrations:
+  run-migrations:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - run:
+          name: Install AWS for rollback
+          command: |
+            pip install awscli && apk add --update nodejs npm curl
+      - run:
+          name: Run migrations
+          become: yes
+          command: |
+            cd backend
+            npm i 
+            npm run build
+            npm run migrations > migrated.txt
+            
+      - run:
+          name: Persist migrations status
+          command: |
+            cd backend
+            if grep -q "has been executed successfully." migrated.txt
+            then
+              curl -H "Content-Type: text/plain" -H "token: 30abd32d-cae9-401b-b4ef-9f9228c77d99" --request PUT --data "yes" https://api.memstash.io/values/"<< pipeline.id >>_migrations"
+              echo "<< pipeline.id >>_migrations did run"
+            else
+              curl -H "Content-Type: text/plain" -H "token: 30abd32d-cae9-401b-b4ef-9f9228c77d99" --request PUT --data "no" https://api.memstash.io/values/"<< pipeline.id >>_migrations"
+              echo "<< pipeline.id >>_migrations did not run"
+            fi
 
-#  deploy-frontend:
+  deploy-frontend:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["77:5c:ed:6f:a1:a8:ef:b5:b6:ba:98:31:8f:4a:9d:12"]
+      - restore_cache: 
+          keys: 
+            - frontend-{{ checksum "package-lock.json" }}
+            - frontend-
+      - run:
+          name: install Node and NPM
+          command: |
+            apk add --update nodejs npm 
+            pip install awscli
+      - run:
+          name: Build frontend
+          command: |
+            export API_URL=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0.7}" \
+            --query 'Reservations[*].Instances[*].PublicDnsName'\
+            --output text):3030
+            cd frontend
+            npm i
+            npm run build
+            aws s3 sync "./dist" s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}
 
-#  deploy-backend:  
+  deploy-backend:
+    docker:
+    - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["77:5c:ed:6f:a1:a8:ef:b5:b6:ba:98:31:8f:4a:9d:12"]
+      - attach_workspace:
+          at: ~/
+      - restore_cache: 
+          keys: 
+            - backend-{{ checksum "package-lock.json" }}
+            - backend-
+      - run:
+          name: Install dependencies
+          become: yes
+          command: |
+            apk add --update ansible
+            pip install awscli
+      - run:
+          name: Build backend
+          command: |
+            cd backend
+            npm run build
+      - run: 
+          name: Deploy server using ansible playbook
+          command: |
+            ansible-playbook -i .circleci/ansible/inventory .circleci/ansible/deploy-backend-server.yml  
 
 #  smoke-test:
 
