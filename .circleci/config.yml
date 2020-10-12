@@ -23,6 +23,10 @@ jobs:
             cd frontend
             npm i
             npm run build
+      - save_cache:
+          key: frontend-{{ checksum "package-lock.json" }}
+          paths:
+            - node_modules
 
   build-backend:
     docker:
@@ -35,18 +39,28 @@ jobs:
             cd backend
             npm i
             npm run build
+      - save_cache:
+          key: backend-{{ checksum "package-lock.json" }}
+          paths:
+            - node_modules
 
   test-frontend:
     docker:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - restore_cache:
+          keys: 
+            - frontend-{{ checksum "package-lock.json" }}
+            - frontend-
       - run:
-          name: Test frontend
+          name: Install dependencies for test
           command: |
             cd frontend
             npm i
-            npm run test
+      - run:
+          name: Test the Frontend
+            command: npm run test
       - store_test_results:
           path: ./frontend/coverage/
 
@@ -56,12 +70,18 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - restore_cache:
+        keys: 
+          - backend-{{ checksum "package-lock.json" }}
+          - backend-
       - run:
-          name: Test backend
+          name: Install dependencies for backend
           command: |
             cd backend
             npm i
-            npm run test
+      - run:
+          name: Test the backend
+          command: npm run test
       - store_test_results:
           path: ./backend/coverage/
 
