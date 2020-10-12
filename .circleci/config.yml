@@ -216,3 +216,10 @@ workflows:
       - scan-backend:
           requires: 
             - build-backend
+      - deploy-infrastructure:
+          requires:
+            - scan-backend
+            - scan-frontend
+      - configure-infrastructure:
+          requires:
+            - deploy-infrastructure       
