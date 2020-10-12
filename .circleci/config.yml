@@ -2,14 +2,41 @@ version: 2.1
 
 ### It's a good practice to keep your commands at the top of the config file. In this project, you'll need at least 2 commands:
 
-# commands:
-#   destroy-environment:
-#     description: Destroy backend and frontend cloudformation stacks given a workflow ID.
-#     ...
+commands:
+  destroy-environment:
+    description: Destroy backend and frontend cloudformation stacks given a workflow ID.
+    parameters:
+      workflow_id:
+        type: string
+    steps:
+      - run:
+          name: Destroy the backend
+          command: |
+            aws cloudformation delete-stack --stack-name "udapeople-backend-<< parameters.workflow_id >>"
+          when: on_fail
+      - run:
+          name: Destroy the frontend
+          command: |
+            aws s3 rm s3://udapeople-<< parameters.workflow_id >> --recursive
+            aws cloudformation delete-stack --stack-name "udapeople-frontend-<< parameters.workflow_id >>"
+          when: on_fail
 
-#   revert-migration:
-#     description: Revert the last migration if successfully run in the current workflow.
-#     ...
+  revert-migration:
+    description: Revert the last migration if successfully run in the current workflow.
+    parameters:
+      workflow_id:
+        type: string
+    steps:
+      - run:
+          name: Revert
+          when: on_fail
+          command: |
+            cd backend
+            npm i
+            npm run build
+            npm run migrations:revert
+      - destroy-environment:
+          workflow_id: << parameters.workflow_id >>
 
 jobs:
   build-frontend:
@@ -275,6 +302,7 @@ jobs:
           name: Build backend
           command: |
             cd backend
+            npm i
             npm run build
       - run:
           name: Create Inventory file
@@ -314,6 +342,10 @@ jobs:
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
             --output text)
             curl "http://${BACKEND_IP}:3030/api/status"
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0.7}
+      - revert-migrations:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   cloudfront-update:
     docker:
@@ -346,6 +378,10 @@ jobs:
               aws cloudformation delete-stack --stack-name "backend-${OldWorkflowID}"
               aws cloudformation delete-stack --stack-name "frontend-${OldWorkflowID}"
             fi
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0.7}
+      - revert-migrations:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
 workflows:
   default:
