@@ -60,8 +60,8 @@ jobs:
             npm i
       - run:
           name: Test the Frontend
-            command: |
-              npm run test
+          command: |
+            npm run test
       - store_test_results:
           path: ./frontend/coverage/
 
