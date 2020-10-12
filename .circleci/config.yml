@@ -164,9 +164,9 @@ jobs:
             https://api.memstash.io/values/bucket_name
       
       - persist_to_workspace:
-          root: ~/
+          root: .circleci/ansible/
           paths:
-            - ./.circleci/ansible/inventory
+            - inventory
 
   configure-infrastructure:
     docker:
@@ -176,7 +176,7 @@ jobs:
       - add_ssh_keys:
           fingerprints: ["77:5c:ed:6f:a1:a8:ef:b5:b6:ba:98:31:8f:4a:9d:12"]
       - attach_workspace:
-          at: ~/
+          at: ~/.circleci/ansible 
       - run:
           name: Install Dependencies
           command: |
@@ -185,7 +185,7 @@ jobs:
       - run:
           name: Configure server
           command: |
-            ansible-playbook -i inventory .circleci/ansible/main.yml
+            ansible-playbook -i .circleci/ansible/inventory .circleci/ansible/main.yml
     
     
 
@@ -256,7 +256,7 @@ jobs:
       - add_ssh_keys:
           fingerprints: ["77:5c:ed:6f:a1:a8:ef:b5:b6:ba:98:31:8f:4a:9d:12"]
       - attach_workspace:
-          at: ~/
+          at: ~/.circleci/ansible 
       - restore_cache: 
           keys: 
             - backend-{{ checksum "package-lock.json" }}
@@ -304,4 +304,13 @@ workflows:
             - scan-frontend
       - configure-infrastructure:
           requires:
-            - deploy-infrastructure       
+            - deploy-infrastructure
+      - run-migrations:
+          requires:
+            - configure-infrastructure
+      - deploy-frontend:
+          requires:
+            - run-migrations
+      - deploy-backend:
+          requires:
+            - run-migrations
