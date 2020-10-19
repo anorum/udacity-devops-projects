@@ -246,7 +246,7 @@ jobs:
               curl -H "Content-Type: text/plain" -H "token: 30abd32d-cae9-401b-b4ef-9f9228c77d99" --request PUT --data "no" https://api.memstash.io/values/"<< pipeline.id >>_migrations"
               echo "<< pipeline.id >>_migrations did not run"
             fi
-        - destroy-environment
+      - destroy-environment
 
   deploy-frontend:
     docker:
