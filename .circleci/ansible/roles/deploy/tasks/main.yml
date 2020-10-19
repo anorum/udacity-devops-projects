@@ -4,11 +4,11 @@
       copy:
         # Uncomment to run remotely on circleci src: /home/circleci/project/backend/.dist
         src: /root/project/backend.tar.gz
-        dest: /home/ubuntu/app/backend.tar.gz
+        dest: /home/ubuntu/backend.tar.gz
     - name: Unzip the backend
       become: true
       shell: |
-        cd /home/ubuntu/app
+        cd /home/ubuntu/
         mkdir backend
         tar -C backend -xvf backend.tar.gz
         cd backend
@@ -18,5 +18,5 @@
     - name: start the pm2 server
       become: true
       shell: |
-        cd /home/ubuntu/app/backend
+        cd /home/ubuntu/backend
         pm2 start dist/main.js
