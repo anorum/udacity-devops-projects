@@ -37,6 +37,9 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - frontend-cache
       - run:
           name: Build the frontend
           command: |
@@ -44,15 +47,18 @@ jobs:
             npm i
             npm run build
       - save_cache:
-          key: frontend-{{ checksum "package-lock.json" }}
+          key: frontend-cache
           paths:
-            - node_modules
+            - frontend/node_modules
 
   build-backend:
     docker:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - backend-cache
       - run:
           name: Build the backend
           command: |
@@ -60,9 +66,9 @@ jobs:
             npm i
             npm run build
       - save_cache:
-          key: backend-{{ checksum "package-lock.json" }}
+          key: backend-cache
           paths:
-            - node_modules
+            - backend/node_modules
 
   test-frontend:
     docker:
@@ -71,14 +77,12 @@ jobs:
       - checkout
       - restore_cache:
           keys: 
-            - frontend-{{ checksum "package-lock.json" }}
-            - frontend-
+            - frontend-cache
       - run:
           name: Test the Frontend
           command: |
             cd frontend
             npm i
-            npm run build
             npm run test
       - store_test_results:
           path: ./frontend/coverage/
@@ -91,14 +95,12 @@ jobs:
       - checkout
       - restore_cache:
           keys: 
-            - backend-{{ checksum "package-lock.json" }}
-            - backend-
+            - backend-cache
       - run:
           name: Test the backend
           command: |
             cd backend
             npm i
-            npm run build
             npm run test
       - store_test_results:
           path: ./backend/coverage/
@@ -110,14 +112,13 @@ jobs:
       - checkout
       - restore_cache:
           keys: 
-            - frontend-{{ checksum "package-lock.json" }}
-            - frontend-
+            - frontend-cache
       - run:
           name: Scan the frontend
           command: |
             cd frontend
             npm i
-            npm audit fix --audit-level=critical
+            npm audit --audit-level=critical
       - save_cache:
           key: frontend-{{ checksum "package-lock.json" }}
           paths:
@@ -129,14 +130,13 @@ jobs:
       - checkout
       - restore_cache:
           keys: 
-            - backend-{{ checksum "package-lock.json" }}
-            - backend-
+            - backend-cache
       - run:
           name: Scan the backend
           command: |
             cd backend
             npm i
-            npm audit fix --audit-level=critical --force
+            npm audit --audit-level=critical
       - save_cache:
           key: backend-{{ checksum "package-lock.json" }}
           paths:
@@ -218,6 +218,9 @@ jobs:
       - image: python:3.7-alpine3.11
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - backend-cache
       - run:
           name: Install Dependencies
           command: |
@@ -229,7 +232,6 @@ jobs:
           command: |
             cd backend
             npm i 
-            npm run build
             npm run migrations > migrated.txt
             cat migrated.txt
       - run:
@@ -244,6 +246,7 @@ jobs:
               curl -H "Content-Type: text/plain" -H "token: 30abd32d-cae9-401b-b4ef-9f9228c77d99" --request PUT --data "no" https://api.memstash.io/values/"<< pipeline.id >>_migrations"
               echo "<< pipeline.id >>_migrations did not run"
             fi
+        - destroy-environment
 
   deploy-frontend:
     docker:
@@ -254,8 +257,7 @@ jobs:
           fingerprints: ["77:5c:ed:6f:a1:a8:ef:b5:b6:ba:98:31:8f:4a:9d:12"]
       - restore_cache: 
           keys: 
-            - frontend-{{ checksum "package-lock.json" }}
-            - frontend-
+            - frontend-cache
       - run:
           name: install Node and NPM
           command: |
@@ -272,6 +274,8 @@ jobs:
             npm i
             npm run build
             aws s3 sync "./dist" s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}
+      - destroy-environment
+      - revert-migration
 
   deploy-backend:
     docker:
@@ -280,23 +284,12 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints: ["77:5c:ed:6f:a1:a8:ef:b5:b6:ba:98:31:8f:4a:9d:12"]
-      - restore_cache: 
-          keys: 
-            - backend-{{ checksum "package-lock.json" }}
-            - backend-
       - run:
           name: Install dependencies
           become: yes
           command: |
             apk add --update ansible nodejs npm tar gzip
             pip install awscli
-
-      - run:
-          name: Build backend
-          command: |
-            cd backend
-            npm i
-            npm run build
       - run:
           name: Zip the backend
           command: |
@@ -317,6 +310,9 @@ jobs:
             export ANSIBLE_HOST_KEY_CHECKING=False
             ansible-playbook -i .circleci/ansible/inventory .circleci/ansible/deploy-backend-server.yml  
           no_output_timeout: 45m
+
+
+
   smoke-test:
     docker:
       - image: python:3.7-alpine3.11
