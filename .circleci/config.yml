@@ -313,13 +313,13 @@ jobs:
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text >> .circleci/ansible/inventory
             cat .circleci/ansible/inventory
-          no_output_timeout: 30m
+          
       - run: 
           name: Deploy server using ansible playbook
           command: |
             export ANSIBLE_HOST_KEY_CHECKING=False
             ansible-playbook -i .circleci/ansible/inventory .circleci/ansible/deploy-backend-server.yml  
-
+          no_output_timeout: 45m
   smoke-test:
     docker:
       - image: amazon/aws-cli
