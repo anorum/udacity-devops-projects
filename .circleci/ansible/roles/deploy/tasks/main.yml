@@ -3,22 +3,20 @@
       become: true
       copy:
         # Uncomment to run remotely on circleci src: /home/circleci/project/backend/.dist
-        src: /root/project/backend/
-        dest: /home/ubuntu/app/
-    - name: stop the pm2 server so it will fully reboot
-      ignore_errors: yes
+        src: /root/project/backend.tar.gz
+        dest: /home/ubuntu/app/backend.tar.gz
+    - name: Unzip the backend
+      become: true
       shell: |
-        pm2 stop server
-        pm2 delete server
-    # Adding this because it takes forever to copy the files over, so just gonna build on server.
-    - name: Run the project build
-      shell: |
-        cd /home/ubuntu/app/backend/
+        cd /home/ubuntu/app
+        mkdir backend
+        tar -C backend -xvf backend.tar.gz
+        cd backend
         npm i
         npm audit fix --audit-level=critical --force
         npm run build
     - name: start the pm2 server
       become: true
       shell: |
-        cd /home/ubuntu/app/backend/
-        pm2 start npm --name server -- start
+        cd /home/ubuntu/app/backend
+        pm2 start dist/main.js

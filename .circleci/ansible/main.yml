@@ -3,4 +3,5 @@
       hosts: server
       user: ubuntu
       roles:
+        - role: configure-prometheus-node-exporter
         - role: configure-server

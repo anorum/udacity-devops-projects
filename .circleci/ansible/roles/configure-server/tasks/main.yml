@@ -11,7 +11,7 @@
     - name: Install Python, Node, NPM
       become: true
       apt:
-        name: ["npm", "nodejs", "python3"]
+        name: ["npm", "nodejs", "python3", "tar", "gzip"]
     - name: Install pm 2
       become: yes
       npm:

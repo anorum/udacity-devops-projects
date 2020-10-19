@@ -288,7 +288,7 @@ jobs:
           name: Install dependencies
           become: yes
           command: |
-            apk add --update ansible nodejs npm
+            apk add --update ansible nodejs npm tar gzip
             pip install awscli
 
       - run:
@@ -297,6 +297,10 @@ jobs:
             cd backend
             npm i
             npm run build
+      - run:
+          name: Zip the backend
+          command: |
+            tar -C backend -czvf backend.tar.gz .
       - run:
           name: Create Inventory file
           command: |
@@ -322,7 +326,7 @@ jobs:
           name: Install dependencies
           become: yes
           command: |
-            apk add --update ansible nodejs npm
+            apk add --update ansible nodejs npm curl
             pip install awscli
       - run:
           name: Frontend Health checkout
