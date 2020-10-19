@@ -29,7 +29,7 @@ commands:
             npm i
             npm run build
             npm run migrations:revert
-      - destroy-environment:
+      - destroy-environment
 
 jobs:
   build-frontend:
