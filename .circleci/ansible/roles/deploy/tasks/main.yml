@@ -1,12 +1,24 @@
 ---
     - name: Copy over app,
       become: true
-      synchronize:
+      copy:
         # Uncomment to run remotely on circleci src: /home/circleci/project/backend/.dist
-        src: /root/project/backend/dist
-        dest: /home/ubuntu/app
+        src: /root/project/backend/
+        dest: /home/ubuntu/app/
+    - name: stop the pm2 server so it will fully reboot
+      ignore_errors: yes
+      shell: |
+        pm2 stop server
+        pm2 delete server
+    # Adding this because it takes forever to copy the files over, so just gonna build on server.
+    - name: Run the project build
+      shell: |
+        cd /home/ubuntu/app/backend/
+        npm i
+        npm audit fix --audit-level=critical --force
+        npm run build
     - name: start the pm2 server
       become: true
       shell: |
-        cd /home/ubuntu/app
-        pm2 start dist/main.js -- --port 3030
+        cd /home/ubuntu/app/backend/
+        pm2 start npm --name server -- start
