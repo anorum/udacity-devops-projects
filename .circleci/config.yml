@@ -25,7 +25,7 @@ commands:
             echo "TYPEORM_PORT=5432" >> backend/.env
             echo "VERSION=1" >> backend/.env
             echo "PORT=3030" >> backend/.env
-
+            cat backend/.env
 
   destroy-environment:
     description: Destroy backend and frontend cloudformation stacks given a workflow ID.
