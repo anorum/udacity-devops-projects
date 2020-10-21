@@ -390,11 +390,6 @@ jobs:
       - add_ssh_keys:
           fingerprints: ["77:5c:ed:6f:a1:a8:ef:b5:b6:ba:98:31:8f:4a:9d:12"]
       - run:
-          name: Install dependencies
-          command: |
-            apk add --update nodejs npm curl
-            pip install awscli
-      - run:
           name: Update cloudfront distribution
           command: |
             export OldWorkflowID=$(aws cloudformation \
