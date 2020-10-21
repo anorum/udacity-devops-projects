@@ -4,8 +4,8 @@
       copy:
         # Uncomment to run remotely on circleci 
         # src: /home/circleci/project/backend/.dist
-        # src: /root/project/backend.tar.gz
-        src: /home/backend.tar.gz
+        src: /root/project/backend.tar.gz
+        # src: /home/backend.tar.gz
         dest: /home/ubuntu/backend.tar.gz
     - name: Unzip the backend
       become: true
