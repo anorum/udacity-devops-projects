@@ -44,12 +44,12 @@ commands:
     description: Revert the last migration if successfully run in the current workflow.
     steps:
       - checkout
-      - create-env
       - run:
           name: Install dependencies
           when: on_fail
           command: |
             apk add --update nodejs npm curl
+      - create-env
       - run:
           name: Revert migrations
           when: on_fail
