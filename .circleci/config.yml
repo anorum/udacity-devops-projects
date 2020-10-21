@@ -9,7 +9,7 @@ commands:
     steps:
       - run:
           name: Create env
-          commands: |
+          command: |
             echo "ENVIRONMENT=production" >> backend/.env
             echo "NODE_ENV=production" >> backend/.env
             echo "NODE_PORT=3030" >> backend/.env
@@ -43,6 +43,7 @@ commands:
   revert-migration:
     description: Revert the last migration if successfully run in the current workflow.
     steps:
+      - checkout
       - create-env
       - run:
           name: Install dependencies
