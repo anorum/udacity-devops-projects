@@ -43,7 +43,6 @@ commands:
   revert-migration:
     description: Revert the last migration if successfully run in the current workflow.
     steps:
-      - checkout
       - run:
           name: Install dependencies
           when: on_fail
