@@ -1,1 +1,1 @@
-http://54.201.100.180:3030/api/status
+http://ec2-34-214-186-106.us-west-2.compute.amazonaws.com:3030/api/status
