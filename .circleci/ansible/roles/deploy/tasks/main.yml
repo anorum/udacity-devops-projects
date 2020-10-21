@@ -2,8 +2,10 @@
     - name: Copy over app,
       become: true
       copy:
-        # Uncomment to run remotely on circleci src: /home/circleci/project/backend/.dist
-        src: /root/project/backend.tar.gz
+        # Uncomment to run remotely on circleci 
+        # src: /home/circleci/project/backend/.dist
+        # src: /root/project/backend.tar.gz
+        src: /home/backend.tar.gz
         dest: /home/ubuntu/backend.tar.gz
     - name: Unzip the backend
       become: true
@@ -19,4 +21,4 @@
       become: true
       shell: |
         cd /home/ubuntu/backend
-        pm2 start "npm start" --name backend
+        pm2 start npm -- start

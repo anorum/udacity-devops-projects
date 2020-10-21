@@ -3,6 +3,28 @@ version: 2.1
 ### It's a good practice to keep your commands at the top of the config file. In this project, you'll need at least 2 commands:
 
 commands:
+
+  create-env:
+    description: Create the .env file.
+    steps:
+      - run:
+          name: Create env
+          commands: |
+            echo "ENVIRONMENT=production" >> backend/.env
+            echo "NODE_ENV=production" >> backend/.env
+            echo "NODE_PORT=3030" >> backend/.env
+            echo "TYPEORM_CONNECTION=postgres" >> backend/.env
+            echo "TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts" >> backend/.env
+            echo "TYPEORM_HOST={{ lookup('env','TYPEORM_HOST') }}" >> backend/.env
+            echo "TYPEORM_PORT={{ lookup('env','TYPEORM_PORT') }}" >> backend/.env
+            echo "TYPEORM_USERNAME={{ lookup('env','TYPEORM_USERNAME') }}" >> backend/.env
+            echo "TYPEORM_PASSWORD={{ lookup('env','TYPEORM_PASSWORD') }}" >> backend/.env
+            echo "TYPEORM_DATABASE={{ lookup('env','TYPEORM_DATABASE') }}" >> backend/.env
+            echo "TYPEORM_PORT=5432" >> backend/.env
+            echo "VERSION=1" >> backend/.env
+            echo "PORT=3030" >> backend/.env
+
+
   destroy-environment:
     description: Destroy backend and frontend cloudformation stacks given a workflow ID.
     steps:
@@ -21,15 +43,26 @@ commands:
   revert-migration:
     description: Revert the last migration if successfully run in the current workflow.
     steps:
+      - create-env
       - run:
-          name: Revert
+          name: Install dependencies
           when: on_fail
           command: |
-            cd backend
-            npm i
-            npm run build
-            npm run migrations:revert
+            apk add --update nodejs npm curl
+      - run:
+          name: Revert migrations
+          when: on_fail
+          command: |
+          if (( $(curl -H "token: 30abd32d-cae9-401b-b4ef-9f9228c77d99" --request GET https://api.memstash.io/values/"${CIRCLE_WORKFLOW_ID:0:7}_migrations" == 'yes' )))
+            then  
+              cd backend
+              npm i
+              npm run build
+              npm run migrations:revert
+            fi;
       - destroy-environment
+
+
 
 jobs:
   build-frontend:
@@ -226,6 +259,7 @@ jobs:
           command: |
             pip install awscli
             apk add --update nodejs npm curl
+      - create-env
       - run:
           name: Run migrations
           become: yes
@@ -240,10 +274,10 @@ jobs:
             cd backend
             if grep -q "has been executed successfully." migrated.txt
             then
-              curl -H "Content-Type: text/plain" -H "token: 30abd32d-cae9-401b-b4ef-9f9228c77d99" --request PUT --data "yes" https://api.memstash.io/values/"<< pipeline.id >>_migrations"
+              curl -H "Content-Type: text/plain" -H "token: 30abd32d-cae9-401b-b4ef-9f9228c77d99" --request PUT --data "yes" https://api.memstash.io/values/"${CIRCLE_WORKFLOW_ID:0:7}_migrations"
               echo "<< pipeline.id >>_migrations did run"
             else
-              curl -H "Content-Type: text/plain" -H "token: 30abd32d-cae9-401b-b4ef-9f9228c77d99" --request PUT --data "no" https://api.memstash.io/values/"<< pipeline.id >>_migrations"
+              curl -H "Content-Type: text/plain" -H "token: 30abd32d-cae9-401b-b4ef-9f9228c77d99" --request PUT --data "no" https://api.memstash.io/values/"${CIRCLE_WORKFLOW_ID:0:7}_migrations"
               echo "<< pipeline.id >>_migrations did not run"
             fi
       - destroy-environment
@@ -282,6 +316,7 @@ jobs:
     - image: python:3.7-alpine3.11
     steps:
       - checkout
+      - create-env
       - add_ssh_keys:
           fingerprints: ["77:5c:ed:6f:a1:a8:ef:b5:b6:ba:98:31:8f:4a:9d:12"]
       - run:
