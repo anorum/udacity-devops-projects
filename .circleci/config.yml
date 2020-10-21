@@ -55,7 +55,7 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            if (( $(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" --request GET https://api.memstash.io/values/migration == 'yes' )))
+            if [[ $(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" --request GET https://api.memstash.io/values/migration) == 'yes' ]]
               then  
                 cd backend
                 npm i
@@ -267,7 +267,7 @@ jobs:
           become: yes
           command: |
             cd backend
-            npm i 
+            npm install 
             npm run migrations > migrated.txt
             cat migrated.txt
       - run:
@@ -404,12 +404,12 @@ jobs:
             export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
             --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
 
-            echo Old Workflow Id: "$(OldWorkflowID)"
+            echo Old Workflow Id: "${OldWorkflowID}"
 
             aws cloudformation deploy \
             --template-file .circleci/files/cloudfront.yml \
             --stack-name udapeople-cloudfront \
-            --parameter-overrides WorkflowID="$(CIRCLE_WORKFLOW_ID:0:7}" \
+            --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
             --tags project=udapeople &
 
             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
