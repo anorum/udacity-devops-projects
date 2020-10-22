@@ -1,0 +1,5 @@
+https://github.com/anorum/udacity-devops-projects
+http://udapeople-4f4b5cb.s3-website-us-west-2.amazonaws.com/
+d230f5ff8z534q.cloudfront.net
+http://ec2-34-214-186-106.us-west-2.compute.amazonaws.com:3030/api/status
+http://ec2-52-12-129-211.us-west-2.compute.amazonaws.com:9090/
